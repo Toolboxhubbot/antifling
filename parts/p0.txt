@@ -1,0 +1,186 @@
+-- Auto-load Anti-Fling
+pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Toolboxhubbot/antifling/refs/heads/main/antifling"))()
+end)
+
+LocalTeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlaceId = game.PlaceId
+
+local function serverHop()
+    pcall(function()
+        if QueueTeleport then
+            QueueTeleport("https://www.roblox.com/games/" .. PlaceId)
+        end
+    end)
+    
+    pcall(function()
+        LocalTeleportService:Teleport(PlaceId, LocalPlayer)
+    end)
+end
+
+local function handleChatCommand(message)
+    local msg = message:lower()
+    if msg == "!shop" or msg:sub(1, 6) == "!shop " then
+        serverHop()
+    end
+end
+
+LocalPlayer.Chatted:Connect(handleChatCommand)
+
+pcall(function()
+    if TextChatService.ChatInputBarConfiguration and TextChatService.ChatInputBarConfiguration.TargetTextChannel then
+        TextChatService.MessageReceived:Connect(function(textChatMessage)
+            if textChatMessage.TextSource and textChatMessage.TextSource.UserId == LocalPlayer.UserId then
+                handleChatCommand(textChatMessage.Text)
+            end
+        end)
+    end
+end)
+
+-- ====================================================================
+-- Appleware
+-- ====================================================================
+
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
+local TeleportService = game:GetService("TeleportService")
+local Lighting = game:GetService("Lighting")
+local UserGameSettings = UserSettings():GetService("UserGameSettings")
+local GuiService = game:GetService("GuiService")
+
+local LP = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+pcall(function()
+    if setclipboard then
+        setclipboard("https://discord.gg/ux2fjm2rt8")
+    end
+end)
+
+local function getGuiParent()
+    local success, gui = pcall(function()
+        if gethui then
+            return gethui()
+        elseif syn and syn.protect_gui then
+            local container = Instance.new("Folder")
+            container.Name = "ProtectedGuiContainer"
+            syn.protect_gui(container)
+            container.Parent = CoreGui
+            return container
+        elseif CoreGui:FindFirstChild("RobloxGui") then
+            return CoreGui
+        end
+        return LP:WaitForChild("PlayerGui", 5)
+    end)
+    if success and gui then return gui end
+    return LP:FindFirstChild("PlayerGui") or CoreGui
+end
+
+-- ==================== FOLDER CONFIGURATION SYSTEM ====================
+local CONFIG_FOLDER_NAME = "ApplewareConfigs"
+local CONFIG_FILE_NAME = "Appleware.json"
+
+local function ensureConfigFolder()
+    pcall(function()
+        if makefolder and isfolder and not isfolder(CONFIG_FOLDER_NAME) then
+            makefolder(CONFIG_FOLDER_NAME)
+        end
+    end)
+end
+ensureConfigFolder()
+
+local function getFullPath()
+    if isfolder and isfolder(CONFIG_FOLDER_NAME) then
+        return CONFIG_FOLDER_NAME .. "/" .. CONFIG_FILE_NAME
+    end
+    return CONFIG_FILE_NAME
+end
+
+-- Forward declarations
+local saveSettings
+local buildUI
+
+local state = {
+    farm = true,
+    xpFarm = false,
+    noclip = false,
+    gun = false,
+    afk = false,
+    autoKillAll = false,
+    autoShootMur = false,
+    autoFlingMur = false,
+    autoResetMurderer = false,
+    autoResetSheriff = true,
+    autoResetInnocent = true,
+    aimbotMurderer = false, 
+    aimbotSheriff = false,
+    loopFlingAll = false,
+    loopFlingMur = false,
+    loopFlingSheriff = false,
+    loopFlingCustom = false,
+    disable3d = false,
+    fpsBoost = false,
+    sendOnFull = false,
+    autoRejoin = false,
+    autoServerHop = false,
+    autoPrestige = false,
+    espPlayers = false,
+    espGunDrop = false,
+    quickTogglesVisible = true,
+}
+
+local settingsConfig = { 
+    webhookUrl = "",
+    webhookCooldown = 30,
+    discordUserId = "",
+    tweenSpeed = 25,
+    selectedScale = 1,
+    customTargetUsername = "",
+    quickTogglesList = {"Grab Gun Now", "Kill All Now", "Kill Sheriff Now", "Fling Murderer Now"}
+}
+
+local TWEEN_SPEED = settingsConfig.tweenSpeed or 25
+
+saveSettings = function()
+    pcall(function()
+        if writefile then
+            ensureConfigFolder()
+            writefile(getFullPath(), HttpService:JSONEncode({
+                state = state,
+                config = settingsConfig
+            }))
+        end
+    end)
+end
+
+local function loadSettings()
+    pcall(function()
+        local path = getFullPath()
+        if readfile and isfile and isfile(path) then
+            local decoded = HttpService:JSONDecode(readfile(path))
+            if decoded.state then
+                for k, v in pairs(decoded.state) do
+                    if state[k] ~= nil then state[k] = v end
+                end
+            end
+            if decoded.config then
+                for k, v in pairs(decoded.config) do
+                    if settingsConfig[k] ~= nil then settingsConfig[k] = v end
+                end
+            end
+            if settingsConfig.tweenSpeed then
+                TWEEN_SPEED = settingsConfig.tweenSpeed
+            end
+        end
+    end)
+end
+loadSettings()
